@@ -1,0 +1,31 @@
+# See: https://github.com/pr3d4t0r/trackodometer/blob/master/LICENSE
+# See: https://github.com/VirusTrack/COVIDvu/blob/master/CONTRIBUTORS.md
+# vim: set fileencoding=utf-8:
+
+
+# Environment:
+#
+# TRACKODOMETER_JUPYTER_MOUNT_POINT   container mount point for /home/jovyanV
+# TRACKODOMETER_NIC_BIND              container host IP address/NIC; can be 127.0.0.1
+#                               or 0.0.0.0
+# TRACKODOMETER_PORT_BIND             container host port
+#
+# Set your custom environment values in ./run.env - Git ignores this file.
+
+version: '3'
+
+services:
+
+    trackodometer_cime_dev:
+        container_name: 'trackodometer_cime_dev'
+        environment:
+            GRANT_SUDO             : 'yes'
+            JUPYTER_LAB_ENABLE     : 'yes'
+        image: 'pr3d4t0r/basdtracks:latest'
+        ports:
+            - '${TRACKODOMETER_NIC_BIND}:${TRACKODOMETER_PORT_BIND}:8888'
+        privileged: true
+        user: 'root:${JUPYTER_LAB_GROUP}'
+        volumes:
+            - ${TRACKODOMETER_JUPYTER_MOUNT_POINT}:/home/jovyan
+

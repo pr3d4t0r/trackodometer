@@ -1,0 +1,91 @@
+#!/bin/bash
+
+
+# See: https://github.com/pr3d4t0r/trackodometer/blob/master/LICENSE
+# See: https://github.com/VirusTrack/COVIDvu/blob/master/CONTRIBUTORS.md
+# vim: set fileencoding=utf-8:
+
+# Constants
+
+CONTAINER_SIG_FILE="/proc/1/cgroup"
+
+
+# Environment configuration:
+
+export TRACKODOMETER_JUPYTER_MOUNT_POINT="."
+export TRACKODOMETER_NIC_BIND="127.0.0.1" # localhost
+export TRACKODOMETER_PORT_BIND="8888"	    # Jupyter default
+[[ -e 'run.env' ]] && source 'run.env'
+
+
+# *** functions ***
+
+function die {
+    echo "$1"
+    exit "$2"
+} # die
+
+
+function assertNotInContainer {
+    if [[ "Linux" == $(uname) ]]
+    then
+        awk '/docker/ || /lxc/ { exit(99); }' "$CONTAINER_SIG_FILE"
+        [[ "$?" == 0 ]] || die "run failed - cannot execute inside a container" 5
+    fi
+} # assertNotInContainer
+
+
+function assertPackageIndexAvailability {
+    [[ -n "$DEVPI_HOST" ]] || die "DEVPI_HOST environment variable not set" 3
+    [[ -n "$PIP_TRUSTED_HOST" ]] || die "PIP_TRUSTED_HOST environment variable not set" 4
+
+    curl "$DEVPI_HOST" &> /dev/null || die "Package index server at $DEVPI_HOST is unavailable; start devpi-server" 6
+} # assertPackageIndexAvailability
+
+
+function checkDockerIsAvailable {
+    which docker-compose > /dev/null || die "docker-compose unavailable or not in path" 1
+} # checkDockerIsAvailable
+
+
+function checkDockerComposeFileExists {
+    [[ -e "./docker-compose.yaml" ]] || die "docker-compose.yaml is not present in pwd == $(pwd)" 2
+} # checkDockerComposeFileExists
+
+
+function setOwnership {
+    # Set ownership to the correct user:group to avoid conflicts
+    # between the internal Docker container user names and the 
+    # host's.
+    #
+    # This script resolves to the userID:groupID of the account
+    # from whence it was invoked.
+    #
+    # Documented method because Docker permissions and ownership
+    # kinda suck.
+    export JUPYTER_LAB_USER=$(id -u)
+    export JUPYTER_LAB_GROUP=$(id -g)
+} # setOwnership
+
+
+function runJupyterScienceLab {
+    local covidvuContainer=$(docker ps | awk '$0 ~ "covidvu_cime_dev" { print($NF); }')
+
+    if [[ -n "$covidvuContainer" ]]
+    then
+        docker rm -f "$covidvuContainer"
+    fi
+
+   env | awk '/TRACKODOMETER/ || /JUPYTER/ || /HOME/' | sort
+   docker-compose up --remove-orphans --no-recreate -d || docker-compose rm -f 
+} # runJupyterScienceLab
+
+
+# *** main ***
+
+assertNotInContainer
+checkDockerIsAvailable
+checkDockerComposeFileExists
+setOwnership
+runJupyterScienceLab "$1"
+
