@@ -141,24 +141,26 @@ dmypy.json
 **/*psd
 **/.conda/*
 **/.cufflinks*
+**/.npm/*
 **/.theano
 **/.vim/*
+**/database/*
 **/pyvenv.cfg
 **/resources/counties-US-all*json
 **/resources/hospital-beds-*US.json
+**/snapshots/*
 **/work/*.tar.gz
 **/work/COVID-19
 **/work/NYT*
 **/work/last-update.txt
+**/work/src/*
 **rclone.conf
 **run.env
 **site-data*
 *swp
 .viminfo
 work/*.json
-**/snapshots/*
-**/database/*
-**/work/src/*
+
 
 # Python virtual environment
 
